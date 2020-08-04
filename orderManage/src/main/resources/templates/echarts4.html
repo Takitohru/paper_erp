@@ -1,0 +1,146 @@
+<!doctype html>
+<html class="x-admin-sm">
+    <head>
+        <meta charset="UTF-8">
+        <title>后台登录-X-admin2.2</title>
+	<meta name="renderer" content="webkit">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+	<meta name="viewport"
+	content="width=device-width,user-scalable=yes, minimum-scale=0.4, initial-scale=0.8,target-densitydpi=low-dpi" />
+	<link rel="stylesheet" href="/static/css/font.css">
+	<link rel="stylesheet" href="/static/css/xadmin.css">
+	<script type="text/javascript" src="/static/js/jquery-1.11.3.min.js"></script>
+	<script src="/static/lib/layui/layui.js" charset="utf-8"></script>
+	<script type="text/javascript" src="/static/js/xadmin.js"></script>
+    </head>
+    <body>
+        <div class="layui-fluid">
+            <div class="layui-row layui-col-space15">
+                <div class="layui-col-md12">
+                    <div class="layui-card">
+                        <div class="layui-card-body ">
+                            <blockquote class="layui-elem-quote">
+                                商品销售情况
+                            </blockquote>
+                            <!-- 为 ECharts 准备一个具备大小（宽高）的 DOM -->
+                            <div id="main" style="width: 100%;height:400px;"></div>
+                            <blockquote class="layui-elem-quote">
+                            </blockquote>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script src="https://cdn.bootcss.com/echarts/4.2.1-rc1/echarts.min.js"></script>
+        <script src="https://cdn.bootcss.com/echarts/4.2.1-rc1/extension/bmap.min.js"></script>
+        <script type="text/javascript">
+        
+        function chushihua(myChart){
+        	 var option = {
+        	            backgroundColor: '#2c343c',
+
+        	            title: {
+        	                text: 'Commodity sell Pie',
+        	                left: 'center',
+        	                top: 20,
+        	                textStyle: {
+        	                    color: '#ccc'
+        	                }
+        	            },
+
+        	            tooltip : {
+        	                trigger: 'item',
+        	                formatter: "{a} <br/>{b} : {c} ({d}%)"
+        	            },
+
+        	            visualMap: {
+        	                show: false,
+        	                min: 80,
+        	                max: 600,
+        	                inRange: {
+        	                    colorLightness: [0, 1]
+        	                }
+        	            },
+        	            series : [
+        	                {
+        	                    name:'商品销售情况',
+        	                    type:'pie',
+        	                    radius : '55%',
+        	                    center: ['50%', '50%'],
+        	                    data:[
+        	                    ].sort(function (a, b) { return a.value - b.value}),
+        	                    roseType: 'angle',
+        	                    label: {
+        	                        normal: {
+        	                            textStyle: {
+        	                                color: 'rgba(255, 255, 255, 0.3)'
+        	                            }
+        	                        }
+        	                    },
+        	                    labelLine: {
+        	                        normal: {
+        	                            lineStyle: {
+        	                                color: 'rgba(255, 255, 255, 0.3)'
+        	                            },
+        	                            smooth: 0.2,
+        	                            length: 10,
+        	                            length2: 20
+        	                        }
+        	                    },
+        	                    itemStyle: {
+        	                        normal: {
+        	                            color: '#c23531',
+        	                            shadowBlur: 200,
+        	                            shadowColor: 'rgba(0, 0, 0, 0.5)'
+        	                        }
+        	                    }
+        	                }
+        	            ]
+        	        };
+
+            myChart.setOption(option);   
+        }
+
+        //从数据库读取数据赋值给echarts
+        function fuzhi(myChart){
+            $.ajax({
+                type : "POST",
+                data : {},
+                dataType : "json", 
+                url : "erp/home/commodityAnalisis",
+                success : function(result) {
+                    //创建一个数组，用来装对象传给series.data，因为series.data里面不能直接for循环
+                    var servicedata=[];
+
+                    for(var i=0;i<result.length;i++){
+                        var obj=new Object();
+                        obj.name=result[i].commodityName; 
+                        obj.value=result[i].value;
+                        servicedata[i]=obj;
+                    }
+
+                    myChart.setOption({
+                        title:{
+                        text:'本年商品销售前5名 数据统计'
+                        },            
+                        series:[{
+                            name:'销售量',
+                            type:'pie', 
+                            radius:'60%', 
+                            data:servicedata.sort(function (a, b) { return a.value - b.value}),
+                        }]
+
+                    });
+
+                }
+            });
+        }
+
+        //初始化echarts实例
+        var myChart = echarts.init(document.getElementById('main'));
+        chushihua(myChart);
+        fuzhi(myChart);    
+
+    </script>
+    </body>
+</html>

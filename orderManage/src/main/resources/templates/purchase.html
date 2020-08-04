@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:td="http://www.thymeleaf.org" xmlns:tr="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>新的采购页面</title>
+    <link rel="stylesheet" href="/static/lib/layui/css/layui.css"  media="all"/>
+    <script type="text/javascript" src="/static/lib/layui/layui.js"></script>
+    <script type="text/javascript" src="/static/js/jquery-1.11.3.min.js"></script>
+    <style>
+        .layui-form-select dl { max-height:180px; }
+    </style>
+</head>
+<body>
+<form class="layui-form" action="">
+    <div class="layui-form-item">
+        <div class="layui-inline">
+            <label class="layui-form-label"> 供应商：</label>
+            <div class="layui-input-inline">
+                <select autocomplete="off" id="supplier" name="modules" lay-verify="required" lay-search="">
+                    <option value="">请选择供应商</option>
+                    <option th:each="supplier:${supplierList}"th:value="${supplier.supplierId}" th:text="${supplier.supplierName}"></option>
+                </select>
+            </div>
+        </div>
+        <div class="layui-inline">
+            <label class="layui-form-label">采购员：</label>
+            <div class="layui-input-inline">
+                <select autocomplete="off" id="employee" name="modules" lay-verify="required" lay-search="">
+                    <option value="">请选择采购员</option>
+                    <option th:each="employee:${empolyeeList}"th:value="${employee.employeeId}"th:text="${employee.employeeName}"></option>
+                </select>
+            </div>
+        </div>
+    </div>
+</form>
+<form class="layui-form" action="">
+    <div class="layui-form-item">
+        <div class="layui-inline">
+            <label class="layui-form-label">商品名称：</label>
+            <div class="layui-input-inline" style="width: 100px">
+                <select autocomplete="off" lay-filter="first" id="newName" name="modules" lay-verify="required" lay-search="">
+                    <option value="">请选择</option>
+                    <option th:each="cname:${cnameList}"th:text="${cname}"></option>
+                </select>
+            </div>
+        </div>
+        <div class="layui-inline">
+            <label class="layui-form-label" style="width: 45px">品牌：</label>
+            <div class="layui-input-inline" style="width: 100px">
+                <select lay-filter="second" id="newBrand" name="modules" lay-verify="required" lay-search="">
+                </select>
+            </div>
+        </div>
+        <div class="layui-inline">
+            <label class="layui-form-label" style="width: 45px">种类：</label>
+            <div class="layui-input-inline" style="width: 100px">
+                <select lay-filter="third" id="newClass" name="modules" lay-verify="required" lay-search="">
+                </select>
+            </div>
+        </div>
+        <div class="layui-inline">
+            <label class="layui-form-label" style="width: 45px">规格：</label>
+            <div class="layui-input-inline" style="width: 100px">
+                <select lay-filter="four" id="newSize" name="modules" lay-verify="required" lay-search="">
+                </select>
+            </div>
+        </div>
+        <div class="layui-inline">
+            <label class="layui-form-label" style="width: 45px">等级：</label>
+            <div class="layui-input-inline" style="width: 100px">
+                <select lay-filter="five" id="newRank" name="modules" lay-verify="required" lay-search="">
+                </select>
+            </div>
+        </div>
+    </div>
+</form>
+<form>
+    <div class="layui-form-item">
+        <div class="layui-inline">
+            <label class="layui-form-label" >  单 价：</label>
+            <div class="layui-input-block">
+                <input onkeyup="clearNoNum(this)" autocomplete="off" type="text" class="layui-input"  placeholder="0.00" id="newPrice"name="newPrice"/>
+            </div>
+        </div>
+        <div class="layui-inline">
+            <label class="layui-form-label" style="width: 45px">数量：</label>
+            <div class="layui-input-block">
+                <input  onkeyup="value=value.replace(/^(0+)|[^\d]+/g,'')" autocomplete="off" type="text" class="layui-input"  placeholder="0" id="newNum"name="newNum"/>
+            </div>
+        </div>
+        <div class="layui-inline">
+            <button type="button" class="layui-btn" onclick="removeRow()">移除商品</button>
+        </div>
+        <div class="layui-inline">
+            <button type="button" class="layui-btn" onclick="addRow()">添加商品</button>
+        </div>
+        <div class="layui-inline">
+            <label class="layui-form-label" style="width: 45px">总价：</label>
+            <div class="layui-input-block">
+                <input readonly="readonly" autocomplete="off" type="text" class="layui-input"  placeholder="0.00" id="newSum"name="newSum"/>
+            </div>
+        </div>
+        <div class="layui-inline">
+            <button type="button" class="layui-btn" onclick="newPurchase()">采购</button>
+        </div>
+    </div>
+</form>
+<table class="layui-table" lay-filter="mytable">
+    <thead>
+    <tr>
+        <th> - </th><th>ID</th><th>名称</th><th>品牌</th><th>种类</th><th>规格</th><th>等级</th><th>购买单价</th><th>购买数量</th><th>小计</th>
+    </tr>
+    </thead>
+    <tbody id="addTarget">
+    </tbody>
+</table>
+<script>//layui下jq无法无法监听select change，要采用以下方式
+layui.use(['layer', 'jquery', 'form','table'], function () {
+    var layer = layui.layer,
+        $ = layui.jquery,
+        form = layui.form;
+        //联级查询开始
+        form.on('select(first)', function(data){//select change触发计算总价
+            console.log("选择商品："+data.value);
+            secondupdate(data.value);
+            form.render('select');//重新渲染所有select
+            function secondupdate(newName){
+                if(newName != null){
+                    $("#newBrand").empty();
+                    $("#newClass").empty();
+                    $("#newSize").empty();
+                    $("#newRank").empty();
+                    $.ajax({
+                        url: "/j/getBrand",
+                        type: "GET",
+                        data:{
+                            commodityName:newName
+                        },
+                        contentType:"application/json;charset=UTF-8",
+                        success: function(res) {
+                            console.log("数组长度："+res.length);
+                            $("#newBrand").append('<option value="">请选择</option>');
+                            for(var i = 0; i < res.length; i++) {
+                                $("#newBrand").append($("<option>"+res[i]+"</option>"));
+                            }
+                            form.render('select');
+                        }
+                    })
+                }
+                else{
+                    console.log("选中空值");
+                }
+            }
+        });
+        form.on('select(second)',function () {
+           thirdupdate();
+           function thirdupdate() {
+               $("#newClass").empty();
+               $("#newSize").empty();
+               $("#newRank").empty();
+               var newName=$("#newName").val();
+               var newBrand=$("#newBrand").val();
+               if((newName != null)&&(newBrand != null)){
+                   //第三级清空
+                   $("#newClass").empty();
+                   $.ajax({
+                       url: "/j/getClass",
+                       type: "GET",
+                       data:{
+                           commodityName:newName,
+                           brand:newBrand
+                       },
+                       contentType:"application/json;charset=UTF-8",
+                       success: function(res) {
+                           console.log("数组长度："+res.length);
+                           $("#newClass").append('<option value="">请选择</option>');
+                           for(var i = 0; i < res.length; i++) {
+                               console.log("结果:"+res[i]);
+                               $("#newClass").append($("<option>"+res[i]+"</option>"));
+                           }
+                           form.render('select');
+                       }
+                   })
+               }else{
+                   console.log("选中空值")
+               }
+           }
+        });
+        form.on('select(third)',function () {
+            fourupdate();
+            function fourupdate() {
+                $("#newSize").empty();
+                $("#newRank").empty();
+                //获取商品名称，品牌,种类
+                var newName=$("#newName").val();
+                var newBrand=$("#newBrand").val();
+                var newClass=$("#newClass").val();
+                if(newName == null||newBrand == null||newClass == null){
+                    console.log("选中空值");
+                }else{
+                    //第四级别清空
+                    $("#newSize").empty();
+                    $.ajax({
+                        url: "/j/getSize",
+                        type: "GET",
+                        data:{
+                            commodityName:newName,
+                            brand:newBrand,
+                            paperClass:newClass
+                        },
+                        contentType:"application/json;charset=UTF-8",
+                        success: function(res) {
+                            $("#newSize").append('<option value="">请选择</option>');
+                            for(var i = 0; i < res.length; i++) {
+                                $("#newSize").append($("<option>"+res[i]+"</option>"));
+                            }
+                            form.render('select');
+                        }
+                    })
+                }
+            }
+        })
+        form.on('select(four)',function () {
+            fiveupdate();
+            function  fiveupdate(){
+                $("#newRank").empty();
+                var newName=$("#newName").val();
+                var newBrand=$("#newBrand").val();
+                var newClass=$("#newClass").val();
+                var newSize=$("#newSize").val();
+                //第5级别清空
+                if(newName == null||newBrand == null ||newClass == null||newSize == null){
+                    console.log("选中空值");
+                }else{
+                    $("#newRank").empty();
+                    $.ajax({
+                        url: "/j/getRank",
+                        type: "GET",
+                        data:{
+                            commodityName:newName,
+                            brand:newBrand,
+                            paperClass:newClass,
+                            paperSize:newSize
+                        },
+                        contentType:"application/json;charset=UTF-8",
+                        success: function(res) {
+                            $("#newRank").append('<option value="">请选择</option>');
+                            for(var i = 0; i < res.length; i++) {
+                                $("#newRank").append("<option>"+res[i]+"</option>");
+                            }
+                            form.render('select');
+                        }
+                    });
+                }
+            }
+        })
+        //联级查询结束
+});
+//正则表达式，只能输入两位小数
+function clearNoNum (obj){
+    obj.value = obj.value.replace(/[^\d.]/g,"");  //清除“数字”和“.”以外的字符
+    obj.value = obj.value.replace(/^\./g,""); //验证第一个字符是数字
+    obj.value = obj.value.replace(/\.{2,}/g,"."); //只保留第一个. 清除多余的
+    obj.value = obj.value.replace(".","$#$").replace(/\./g,"").replace("$#$",".");
+    obj.value = obj.value.replace(/^(\-)*(\d+)\.(\d\d).*$/,'$1$2.$3');//只能输入两个小数
+    if(obj.value.indexOf(".")< 0 && obj.value !=""){//以上已经过滤，此处控制的是如果没有小数点，首位不能为类似于 01、02的金额
+        obj.value= parseFloat(obj.value);
+    }
+}
+//判断商品是否存在
+function haveId(input){
+    var res=0;
+    for(var i=0;i<$("#addTarget tr").length;i++){
+        var j=$("#addTarget tr:eq("+i+")").children().eq(1).text();
+        if(j*1 == input*1){
+            res=1;//已经存在id，则res为1
+        }
+    }
+    return res;
+}
+//添加表格行
+function addRow() {
+    var newName=$("#newName").val();//商品名称
+    var newBrand=$("#newBrand").val();//商品品牌
+    var newClass=$("#newClass").val();//商品种类
+    var newSize=$("#newSize").val();//商品规格
+    var newRank=$("#newRank").val();//商品等级
+    var newPrice=$("#newPrice").val();//商品价格
+    var newNum=$("#newNum").val();//商品数量
+    if(newPrice==""){
+        alert("请设置采购单价");
+        return 0;
+    }
+    if(newNum==""){
+        alert("请选择采购数量")
+        return 0;
+    }
+    var newCid;
+    //获取商品id
+    $.ajax({
+        url: "/j/getCid",
+        type: "GET",
+        data:{
+            commodityName:newName,
+            brand:newBrand,
+            paperClass:newClass,
+            paperSize:newSize,
+            Crank:newRank
+        },
+        async: false,//关闭异步，防止newCid没有值
+        contentType:"application/json;charset=UTF-8",
+        success: function(res) {
+            console.log("商品id:"+res);
+            newCid=res;
+        }
+    })
+    console.log("是否已经存在id："+haveId(newCid));
+    var next=haveId(newCid);
+    if(next*1!=1){
+        var newtotal=(newPrice*newNum).toFixed(2);
+        var newSum=$("#newSum").val();
+        $("#newSum").val(newSum*1+newtotal*1);//转换为数字计算
+        console.log("订单总价"+$("#newSum").val());
+        var newline=$("<tr></tr>");
+        newline.html("<td><input type='checkbox' name='checkbox'/><th>"+newCid+"</th><th>"+newName+"</th><th>"+newBrand+"</th><th>"+newClass+"</th><th>"+newSize+"</th><th>"+newRank+"</th><th>"+newPrice+"</th><th>"+newNum+"</th><th>"+ newtotal+"</th>");
+        $("#addTarget:last").append(newline);//向tbody最后添加一行tr.
+    }else{
+     alert("该商品已经存在,请重新选择");
+    }
+}
+//移除表格行
+function removeRow(){
+    //移除商品要减少总价
+    $('input[name="checkbox"]:checked').each(function(){
+        var tr= $(this).parent().parent();
+        var price =tr.children().eq(9).text();
+        $(this).parent().parent().remove();//移除当前行 checkbox的父级是td，td的父级是tr，然后删除tr。就ok了。用each，选择多行遍历删除
+        var sum=$("#newSum").val();
+        $("#newSum").val(sum-price);
+    });
+}
+//传递采购单与采购明细，采购
+function newPurchase() {
+    var supplierId=$("#supplier").val();
+    var employeeId=$("#employee").val();
+    var totalPrice=$("#newSum").val();
+    if (supplierId==""){
+        alert("请选择供应商");
+        return 0;
+    }
+    if(employeeId==""){
+        alert("请选择采购员");
+        return 0;
+    }
+    if(totalPrice==""){
+        alert("请选择商品");
+        return 0;
+    }
+    console.log("---订单信息---"+supplierId);
+    console.log("选择供应商id:"+supplierId);
+    console.log("选择采购员id:"+employeeId);
+    console.log("订单总价:"+totalPrice);
+    //订单明细列表的json对象
+    var detailList=[];
+    for(var i=0;i<$("#addTarget tr").length;i++) {
+        var commodityId= $("#addTarget tr:eq(" + i + ")").children().eq(1).text();//商品id
+        var purchasePrice=$("#addTarget tr:eq(" + i + ")").children().eq(7).text();//采购单价
+        var quantity=$("#addTarget tr:eq(" + i + ")").children().eq(8).text();//采购数量
+        var detail={
+            "commodityId":commodityId,
+            "purchasePrice":purchasePrice,
+            "quantity":quantity
+        };
+        detailList.push(detail);
+    }
+    console.log(detailList);
+    $.ajax({
+        url: "/j/addNewPurchase",
+        type: "POST",
+        data:{
+            supplierId:supplierId*1,
+            employeeId:employeeId*1,
+            totalPrice:totalPrice,
+            //待添加，订单明细得到json对象
+            detailList:JSON.stringify(detailList)
+        },
+        success: function(res) {
+            alert("添加成功");
+            location.reload();
+        }
+    })
+}
+</script>
+</body>
+</html>

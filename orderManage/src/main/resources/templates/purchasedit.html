@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:td="http://www.thymeleaf.org" xmlns:tr="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>验货</title>
+    <link rel="stylesheet" href="/static/lib/layui/css/layui.css"  media="all"/>
+    <script type="text/javascript" src="/static/lib/layui/layui.js"></script>
+    <script type="text/javascript" src="/static/js/jquery-1.11.3.min.js"></script>
+    <style>
+        .layui-form-select dl { max-height:180px; }
+    </style>
+</head>
+<body>
+<form class="layui-form" action="">
+    <div class="layui-form-item">
+        <div class="layui-inline">
+            <label class="layui-form-label">采购单ID：</label>
+            <div class="layui-input-block">
+                <input id="purchaseId" readonly="readonly" type="text" name="title" lay-verify="title" autocomplete="off" th:value="${parchaseId}" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-inline">
+            <label class="layui-form-label">订单总价：</label>
+            <div class="layui-input-block">
+                <input id="totalPrice" readonly="readonly" type="text" name="title" lay-verify="title" autocomplete="off" th:value="${totalPrice}" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-inline">
+            <label class="layui-form-label">实际价值：</label>
+            <div class="layui-input-block">
+                <input id="sum" readonly="readonly" type="text" name="title" lay-verify="title" autocomplete="off" placeholder="0.00" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-inline">
+            <label class="layui-form-label">验货员：</label>
+            <div class="layui-input-inline">
+                <select id="employee" name="modules" lay-verify="required" lay-search="">
+                    <option value="">--请选择--</option>
+                    <option th:each="employee:${empolyeeList}"th:value="${employee.employeeId}"th:text="${employee.employeeName}"></option>
+                </select>
+            </div>
+        </div>
+        <div class="layui-inline">
+            <button type="button" class="layui-btn" onclick="getData()">提交</button>
+        </div>
+    </div>
+</form>
+<table class="layui-table" lay-filter="mytable">
+    <thead>
+        <tr>
+            <th>商品id</th>
+            <th>采购单价</th>
+            <th>采购数量</th>
+            <th>实际接受数量</th>
+            <th>有效价值</th>
+            <th>备注</th>
+        </tr>
+    </thead>
+    <tbody id="target">
+        <tr th:each="detail:${list}">
+            <td width="100" th:text="${detail.commodityId}"></td>
+            <td width="100" th:text="${detail.purchasePrice}"></td>
+            <td width="100" th:text="${detail.quantity}"></td>
+            <th:block th:with="max=${detail.quantity}">
+            <td width="100">
+                <form class="layui-form" action="">
+                    <select  lay-filter="test" lay-verify="required" lay-search="">
+                        <option th:each="i:${#numbers.sequence(0,max)}" th:value="${i}"th:text="${i}"></option>
+                    </select>
+                </form>
+            </td>
+            </th:block>
+            <td width="100" >
+                <input  readonly="readonly" type="text" name="title" lay-verify="title" autocomplete="off" value="0.00" class="layui-input">
+            </td>
+            <td>
+                <input  maxlength="30"type="text" name="title" lay-verify="title" autocomplete="off" value="......" class="layui-input">
+            </td>
+        </tr>
+    </tbody>
+</table>
+<script>//layui下jq直接无法监听select change，要采用以下方式
+    layui.use(['layer', 'jquery', 'form','table'], function () {
+        var layer = layui.layer,
+            $ = layui.jquery,
+            form = layui.form;
+        form.on('select(test)', function(data){//select change触发计算总价
+            console.log("newint"+data.value);
+            update();
+            form.render('select');//select是固定写法 不是选择器
+        });
+        function update() {//跟新实际价值，总价
+            var sum=0;
+            for(var i=0;i<$("#target tr").length;i++){
+                console.log(i);
+                var num=$("#target tr:eq("+i+")").children().eq(3).find("select").val();
+                var price=$("#target tr:eq("+i+")").children().eq(1).text();
+                var total=(num*price);
+                sum+=total;
+                console.log("price:"+price+"  num:"+num+" total:"+total+" sum:"+sum);
+                $("#target tr:eq("+i+")").children().eq(4).find("input").val(total.toFixed(2));
+            }
+            $("#sum").val(sum.toFixed(2));
+        }
+    });
+    function getData() {
+        var purchaseId=$("#purchaseId").val();
+        var sum=$("#sum").val();//实际总价值
+        var employeeId=$("#employee").val();//验货员id
+        if(employeeId==""){
+            alert("请选择验货员");
+            return 0;
+        }
+        console.log("订单id："+purchaseId+" 实际总价值:"+sum," 采购员id："+employeeId);
+        var detailList=[];//验货明细信息数组
+        for(var i=0;i<$("#target tr").length;i++){
+            var commodityId=$("#target tr:eq("+i+")").children().eq(0).text();//商品id
+            var actualAcceptance=$("#target tr:eq("+i+")").children().eq(3).find("select").val();//实际接收数量
+            var price=$("#target tr:eq("+i+")").children().eq(4).find("input").val();//实际价值
+            var inspectionSituaton=$("#target tr:eq("+i+")").children().eq(5).find("input").val();
+            var detail={
+                commodityId:commodityId,
+                actualAcceptance:actualAcceptance,
+                price:price,
+                inspectionSituaton:inspectionSituaton
+            }
+            detailList.push(detail);
+        }
+        console.log(detailList);
+        $.ajax({
+            url:"/j/checkNewPurchase",
+            type:"POST",
+            data:{
+                purchaseId:purchaseId,
+                employeeId:employeeId,
+                payablePrice:sum,
+                detailList:JSON.stringify(detailList)
+            },
+            success: function(res) {
+            	layer.msg('提交成功', {icon: 5});
+                location.href="trackpurchase";
+            }
+        });
+    }
+</script>
+</body>
+</html>

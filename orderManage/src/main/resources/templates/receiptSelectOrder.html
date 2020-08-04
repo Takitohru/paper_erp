@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html class="x-admin-sm">
+<head>
+    <meta charset="UTF-8">
+    <title>欢迎页面-X-admin2.2</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width,user-scalable=yes, minimum-scale=0.4, initial-scale=0.8,target-densitydpi=low-dpi" />
+    <link rel="stylesheet" href="/static/css/font.css">
+    <link rel="stylesheet" href="/static/css/xadmin.css">
+    <script src="/static/lib/layui/layui.js" charset="utf-8"></script>
+    <script type="text/javascript" src="/static/js/xadmin.js"></script>
+    <!--[if lt IE 9]>
+    <script src="https://cdn.staticfile.org/html5shiv/r29/html5.min.js"></script>
+    <script src="https://cdn.staticfile.org/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    <style type="text/css">
+        .layui-table-col-special{
+            min-width: 48px!important;
+        }
+    </style>
+</head>
+<body>
+
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-body">
+                    <table id="incomp" lay-filter="incomp-row"></table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/html" id="toolbarDemo">
+    <div class="layui-btn-container">
+        <div class="layui-btn" lay-event="addOrder">确定选择</div>
+    </div>
+</script>
+
+<script type="text/javascript">
+
+    const ids=JSON.parse(localStorage.getItem("receipt_incomp_ids"));
+
+    const clientId = localStorage.getItem("receipt_clientId");
+
+    localStorage.removeItem("receipt_clientId");
+    localStorage.removeItem("receipt_incomp_ids");
+
+    layui.use(['table','form', 'layer'], function(){
+        var table = layui.table;
+        var layindex = parent.layer.getFrameIndex(window.name);
+
+        table.render({
+            elem: '#incomp'
+            ,url: '/erp/collectByOrder/getIncompleteOrders/clientId'
+            ,where:{
+                clientId:clientId,
+                ids:ids
+            }
+            ,toolbar:'#toolbarDemo'
+            ,defaultToolbar:[]
+            ,limit:30
+            ,limits:[30,60,90]
+            ,cols: [
+                [
+                    {type:'radio',minWidth:48}
+                    ,{field: 'orderId', title: '订单号',sort: true}
+                    ,{field: 'clientName', title: '客户名称'}
+                    ,{field: 'orderDate', title: '订单日期'}
+                    ,{field: 'orderTotal', title: '订单总额',sort: true}
+                    ,{field: 'transTotal', title: '运费总额'}
+                    ,{field: 'payable', title: '应收款'}
+                    ,{field: 'received', title: '已收款'}
+                    ,{field: 'unpay', title: '未收款'}
+                ]
+            ]
+        });
+
+        table.on('toolbar(incomp-row)', function(obj){
+            var checkStatus = table.checkStatus(obj.config.id);
+            // console.log(checkStatus);
+            // console.log(table);
+            // console.log(parent);
+            if(checkStatus.data.length!==0) {
+                var incomp = parent.layui.table.cache.incomp;
+                incomp.push(checkStatus.data[0]);
+                parent.layui.table.reload("incomp", {
+                    data: incomp
+                });
+                parent.layer.close(layindex);
+            }else{
+                layer.alert('请选择要添加的订单');
+            }
+        });
+    });
+</script>
+
+</body>
+</html>

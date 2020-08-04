@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html class="x-admin-sm" xmlns:th="http://www.thymeleaf.org">
+    <head>
+        <meta charset="UTF-8">
+        <title>欢迎页面-X-admin2.2</title>
+        <meta name="renderer" content="webkit">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <meta name="viewport" content="width=device-width,user-scalable=yes, minimum-scale=0.4, initial-scale=0.8,target-densitydpi=low-dpi" />
+        <link rel="stylesheet" href="/static/css/font.css">
+        <link rel="stylesheet" href="/static/css/xadmin.css">
+        <script type="text/javascript" src="/static/lib/layui/layui.js" charset="utf-8"></script>
+        <script type="text/javascript" src="/static/js/xadmin.js"></script>
+        <!-- 让IE8/9支持媒体查询，从而兼容栅格 -->
+        <!--[if lt IE 9]>
+            <script src="https://cdn.staticfile.org/html5shiv/r29/html5.min.js"></script>
+            <script src="https://cdn.staticfile.org/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]--></head>
+    
+    <body>
+        <div class="layui-card-body layui-table-body layui-table-main">
+        	  <div class="layui-card">
+                      <div class="layui-card-body ">
+     				       <form class="layui-form layui-col-space5">
+                                <div class="layui-inline layui-show-xs-block">
+                                    <input type="text" id="name" name="name"  placeholder="请输入客户名" autocomplete="off" class="layui-input">
+                                </div>
+                                <div class="layui-inline layui-show-xs-block">
+                                    <button class="layui-btn"  lay-submit="query" lay-filter="query"><i class="layui-icon">&#xe615;</i></button>
+                                </div>
+                                </form>
+                             </div>
+                         </div>
+						<table class="layui-table layui-form">
+							<thead>
+								<tr>
+									<th>操作</th>
+									<th>客户ID</th>
+									<th>客户名称</th>
+									<th>客户地址</th>
+									<th>电话</th>
+									<th>是否为VIP</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<tr th:each="item: ${ClientList}">
+									<!-- 在这里执行添加逻辑 -->
+									<td class="td-manage" ><a  href = "javascript:void(0)" title="添加" 
+                                     th:onclick = "'javascript : addClient(\'' + ${ item.getClientId() } + '\')'">
+                                    <i class="layui-icon"></i>
+									</a>
+									<td th:text="${item.getClientId()}"></td>
+                                    <td th:text="${item.getClientName()}"></td>
+                                    <td th:text="${item.getClientAddress()}"></td>
+                                    <td th:text="${item.getClientTel()}"></td>
+                                    <td th:text="${item.getIsVip()}"></td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+        <script>
+        	function addClient(id)
+        	{
+        		var index = parent.layer.getFrameIndex(window.name);
+                //关闭当前frame
+                parent.layer.close(index);
+                $.ajax({
+         		    type: "POST",
+         		    url: "/erp/outbound/addClient", 
+         		　　data:
+         		    {
+    	        		　 clientId: id
+         		　　}, 
+         		　　success: function(result){
+         				xadmin.father_reload();
+         		　　}
+         		});
+        	}
+        layui.use(['form', 'layer'],
+            function() {
+                $ = layui.jquery;
+                var form = layui.form,
+                layer = layui.layer;
+
+                //自定义验证规则
+                form.verify({
+                    nikename: function(value) {
+                        if (value.length < 5) {
+                            return '昵称至少得5个字符啊';
+                        }
+                    },
+                    pass: [/(.+){6,12}$/, '密码必须6到12位'],
+                    repass: function(value) {
+                        if ($('#L_pass').val() != $('#L_repass').val()) {
+                            return '两次密码不一致';
+                        }
+                    }
+                });
+
+                //监听提交
+                form.on('submit(query)',
+                function(data) {
+                	$.ajax({
+            		    type: "POST",
+            		    url: "erp/outbound/queryC",
+            		　　data:
+            		    {
+            			name: $("#name").val()
+            		　　}, 
+            		　　success: function(result){
+            		　　}
+            		});
+                    layer.alert("查询成功", {
+                        icon: 6
+                    },
+                    function() {
+                        //关闭当前frame
+                        location.reload();
+                        // 可以对父窗口进行刷新 
+                    });
+                    return false;
+                });
+
+            });</script>
+    </body>
+
+</html>

@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html class="x-admin-sm" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>欢迎页面-X-admin2.2</title>
+<meta name="renderer" content="webkit">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport"
+	content="width=device-width,user-scalable=yes, minimum-scale=0.4, initial-scale=0.8,target-densitydpi=low-dpi" />
+<link rel="stylesheet" href="/static/css/font.css">
+<link rel="stylesheet" href="/static/css/xadmin.css">
+<script src="/static/lib/layui/layui.js" charset="utf-8"></script>
+<script type="text/javascript" src="/static/js/xadmin.js"></script>
+<!--[if lt IE 9]>
+          <script src="https://cdn.staticfile.org/html5shiv/r29/html5.min.js"></script>
+          <script src="https://cdn.staticfile.org/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+</head>
+<body>
+
+	<div class="layui-fluid">
+		<div class="layui-row layui-col-space15">
+			<div class="layui-col-md12">
+				<div class="layui-card">
+					<div class="layui-card-body ">
+						<form class="layui-form layui-col-space5">
+							<div class="layui-inline layui-show-xs-block">
+								<table class="layui-table layui-form">
+									<tbody>
+										<tr>
+											<td width=150px><a title="选择客户"
+												onclick="xadmin.open('选择客户','/erp/order/client',1200,800)"
+												href="javascript:;"> <i class="layui-icon"></i>
+											</a>客户名称:&nbsp&nbsp<span class="x-red" th:text="${client.getClientName()}"></span></td>
+											<td width=150px><a title="选择员工"
+												onclick="xadmin.open('选择员工','/erp/order/employee',1200,800)"
+												href="javascript:;"> <i class="layui-icon"></i>
+											</a>员工名称:&nbsp&nbsp<span class="x-red" th:text="${employee.getEmployeeName()}"> </span></td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</form>
+					</div>
+					<div class="layui-card-body layui-table-body layui-table-main">
+						<table id="Mytable" class="layui-table layui-form">
+							<thead>
+								<tr>
+									<th>操作</th>
+									<th>商品ID</th>
+									<th>商品规格</th>
+									<th>商品名称</th>
+									<th>数量</th>
+									<th>可用库存</th>
+									<th>普通单价</th>
+									<th>折扣价格</th>
+									<th>成交金额</th>
+									<th>运费</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr th:each="item: ${commodityList}">
+									<td class="td-manage" >              
+                                     <a href = "javascript:void(0)" title="查看商品信息"  th:onclick = "'javascript : commodityView(\'' + ${ item.getCommodityId() } + '\')'">
+                                         <i class="layui-icon">&#xe638;</i>
+                                      </a> 
+                                      <a href = "javascript:void(0)" title="移除"  th:onclick = "'javascript : commodityDelete(\'' + ${ item.getCommodityId() } + '\')'">
+                                        <i class="layui-icon">&#xe640;</i>
+                                      </a>
+                                       </td>
+									<td id="commodityId" th:text="${item.getCommodityId()}"></td>
+                                    <td th:text="${item.getPaperSize()}"></td>
+                                    <td th:text="${item.getCommodityName()}"></td>
+                                    <td id="commodityNum"  contentEditable="true" ></td>
+                                    <td th:text="${item.getInventoryNumber()}"></td>
+                                    <td th:text="${item.getPrice()}"></td>
+                                    <td th:text="${item.getVipAccount()}"></td>
+                                    <td th:if="${client.getIsVip()=='是'}"  th:text="${item.getVipAccount()}"></td>
+                                    <td th:if="${client.getIsVip()!='是'}"  th:text="${item.getPrice()}"></td>
+                                    <td contentEditable="true"></td>
+								</tr>
+							</tbody>
+						 </table>
+						 <div class="layui-anim layui-anim-scaleSpring">
+						<button  class="layui-btn layui-btn-warm layui-btn-radius" title="增加" onclick="xadmin.open('选择商品','/erp/order/commodity',1200,800)" href="javascript:;" lay-filter="add" lay-submit="">
+                          	选择添加商品                
+                  		</button>
+                  		</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div th:if="${not #strings.isEmpty(client.getClientName()) and  not #strings.isEmpty(employee.getEmployeeName())}" style="width:300px;height:300px">
+　		<div style="position:absolute;right:0px;bottom:0px;width:60px;border:1px solid #aaa">
+			<button type="button" class="layui-btn layui-btn-lg layui-btn-normal"
+			onclick="CheckForm()"
+			>提交</button>
+		</div>
+	</div>
+	<div th:if="${#strings.isEmpty(client.getClientName()) ||  #strings.isEmpty(employee.getEmployeeName())}" style="width:300px;height:300px">
+　		<div style="position:absolute;right:0px;bottom:0px;width:180px;border:1px solid #aaa">
+			<button type="button" class="layui-btn layui-btn-lg layui-btn-disabled"			
+			>填入必要信息后方可提交</button>
+		</div>
+	</div>
+</body>
+<script>
+  	  function CheckForm()
+  	  {
+  		  var tab=document.getElementById("Mytable");
+	 	  var rows=tab.rows;
+	 	  var flag="true";
+  		  if(rows.length>=2)
+  			  {
+  			  for(var i=1;i<rows.length;i++)
+  				  {
+  				  if(rows[i].cells[4].innerHTML=='' || rows[i].cells[9].innerHTML=='')
+  					  {
+  					  layer.msg('请输入必填信息项', {icon: 5}); 
+  				      flag="false";
+  					  }
+  				  }	
+  			if(flag!="false")
+    			  sendForm();
+  			  }
+  		  else
+  			  layer.msg('请录入销售订单商品信息', {icon: 5}); 
+  	  }
+  	  function sendForm()
+  	  {
+  		  var tab=document.getElementById("Mytable");
+  	 	  var rows=tab.rows;
+  	 	  var CommodityIdList=new Array();
+  	 	  var numList=new Array();
+  	 	  var transPriceList=new Array();
+  	  	 for(var i=1;i<rows.length;i++)
+  	  		 {
+  	  			CommodityIdList[i-1]=rows[i].cells[1].innerHTML;
+  	  			numList[i-1]=rows[i].cells[4].innerHTML;
+  	  			transPriceList[i-1]=rows[i].cells[9].innerHTML;
+  	  		 }
+  		$.ajax({
+  		    type: "POST",
+  		    url:  "/erp/order/submitOrder", 		  
+  		    data:
+  		    {
+  		    	commodityIdList:CommodityIdList,
+  		    	numList:numList,
+  		    	transPriceList:transPriceList
+  		    },
+  		    error: function(request) {
+  		        alert("Connection error");
+  		  
+  		    },
+  		    success: function(data) {
+  		    	 location.reload();
+  		    }
+  		});
+  	  }
+      function commodityDelete(id)
+      {  	  
+         var url="/erp/order/commodityRemove";
+         layer.confirm('确认要删除吗？',function(index){
+        	 if(index==true)
+        		{
+        		 $.ajax({
+         		    type: "POST",
+         		    url: url, 
+         		　　data:
+         		    {
+ 	        		　 CommodityId: id
+         		　　}, 
+         		　　success: function(result){
+         			    location.reload();
+         		　　}
+         		});
+        		}
+          });
+      }
+      function commodityView(id)
+	   {
+		   var url="/erp/commodity/commodityView?id="+id;
+		   xadmin.open('查看商品信息',url,400,600);
+ 	   }
+      
+      layui.use(['laydate','form'], function(){
+        var laydate = layui.laydate;
+        var  form = layui.form;
+
+
+        // 监听全选
+        form.on('checkbox(checkall)', function(data){
+
+          if(data.elem.checked){
+            $('tbody input').prop('checked',true);
+          }else{
+            $('tbody input').prop('checked',false);
+          }
+          form.render('checkbox');
+        }); 
+        
+        //执行一个laydate实例
+        laydate.render({
+          elem: '#start' //指定元素
+        });
+
+        //执行一个laydate实例
+        laydate.render({
+          elem: '#end' //指定元素
+        });
+
+
+      });
+
+       /*用户-停用*/
+      function member_stop(obj,id){
+          layer.confirm('确认要停用吗？',function(index){
+
+              if($(obj).attr('title')=='启用'){
+
+                //发异步把用户状态进行更改
+                $(obj).attr('title','停用')
+                $(obj).find('i').html('&#xe62f;');
+
+                $(obj).parents("tr").find(".td-status").find('span').addClass('layui-btn-disabled').html('已停用');
+                layer.msg('已停用!',{icon: 5,time:1000});
+
+              }else{
+                $(obj).attr('title','启用')
+                $(obj).find('i').html('&#xe601;');
+
+                $(obj).parents("tr").find(".td-status").find('span').removeClass('layui-btn-disabled').html('已启用');
+                layer.msg('已启用!',{icon: 5,time:1000});
+              }
+              
+          });
+      }
+
+      /*用户-删除*/
+      function member_del(obj,id){
+          layer.confirm('确认要删除吗？',function(index){
+              //发异步删除数据
+              $(obj).parents("tr").remove();
+              layer.msg('已删除!',{icon:1,time:1000});
+          });
+      }
+
+
+
+      function delAll (argument) {
+        var ids = [];
+
+        // 获取选中的id 
+        $('tbody input').each(function(index, el) {
+            if($(this).prop('checked')){
+               ids.push($(this).val())
+            }
+        });
+  
+        layer.confirm('确认要删除吗？'+ids.toString(),function(index){
+            //捉到所有被选中的，发异步进行删除
+            layer.msg('删除成功', {icon: 1});
+            $(".layui-form-checked").not('.header').parents('tr').remove();
+        });
+      }
+    </script>
+</html>

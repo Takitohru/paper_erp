@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html class="x-admin-sm">
+<head>
+    <meta charset="UTF-8">
+    <title>欢迎页面-X-admin2.2</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width,user-scalable=yes, minimum-scale=0.4, initial-scale=0.8,target-densitydpi=low-dpi" />
+    <link rel="stylesheet" href="/static/css/font.css">
+    <link rel="stylesheet" href="/static/css/xadmin.css">
+    <script src="/static/lib/layui/layui.js" charset="utf-8"></script>
+    <script type="text/javascript" src="/static/js/xadmin.js"></script>
+    <script src="https://cdn.bootcss.com/echarts/4.2.1-rc1/echarts-en.common.js"></script>
+    <!--[if lt IE 9]>
+    <script src="https://cdn.staticfile.org/html5shiv/r29/html5.min.js"></script>
+    <script src="https://cdn.staticfile.org/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    <style type="text/css">
+        .layui-table-col-special{
+            min-width: 48px!important;
+        }
+    </style>
+</head>
+<body>
+
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-header" style="line-height:60px;height: 60px;">               
+                    <h1 class="layui-header" style="text-align:center;line-height:60px;">
+                        收款单
+                    </h1>
+                </div>
+                <div class="layui-card-body ">
+                    <form class="layui-form" action="">
+                        <div class="layui-form-item">
+                            <div class="layui-inline">
+                                <label class="layui-form-label">客户名称</label>
+                                <div class="layui-input-inline">
+                                    <select id="customer" name="customer" lay-filter="customer-select" lay-verify="required" lay-search="">
+                                        <option value="">--请选择客户--</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <table id="incomp" lay-filter="incomp-row"></table>
+                        <div class="layui-row">
+                            <div class="layui-col-md10">
+                                <div class="layui-form-item">
+                                    <div class="layui-inline">
+                                        <label class="layui-form-label">业务员</label>
+                                        <div class="layui-input-inline">
+                                            <input name="name" lay-verify="required" autocomplete="off" class="layui-input">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="layui-col-md2" style="text-align: right">
+                                <button lay-submit="" class="layui-btn" lay-filter="generate">生成收款单</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/html" id="toolbarDemo">
+    <div class="layui-btn-container">
+        <div class="layui-btn" lay-event="addOrder">添加订单</div>
+        <div class="layui-btn layui-btn-danger" lay-event="delOrder">删除订单</div>
+    </div>
+</script>
+
+<script type="text/javascript">
+
+    let tabledata = [];
+
+    if(localStorage.getItem("receipt_incomp")!=null) {
+        tabledata.push(JSON.parse(localStorage.getItem("receipt_incomp")));
+        localStorage.removeItem("receipt_incomp");
+        console.log(tabledata);
+    }
+
+    layui.use(['table','form', 'layer'], function(){
+        var table = layui.table;
+        var form=layui.form;
+        var layer = layui.layer;
+
+        var customerId=-1;
+
+        $.ajax({
+            url:"/erp/collectByOrder/getAllClient",
+            type:"GET",
+            dataType:"json",
+            success:function(result){
+                var list = result;    //返回的数据
+                for(var p in list){
+                    var option = document.createElement("option");
+                    if(tabledata.length!==0){
+                        if(list[p].clientId===tabledata[0].clientId){
+                            customerId=list[p].clientId;
+                            option.setAttribute("selected","");
+                        }
+                    }
+                    option.setAttribute("value",list[p].clientId);
+                    option.innerText=list[p].clientName;
+                    $("#customer").append(option);
+                }
+                form.render('select');
+            }
+        });
+
+        table.render({
+            elem: '#incomp'
+            ,url: ''
+            ,data:tabledata
+            ,toolbar:'#toolbarDemo'
+            ,defaultToolbar:[]
+            ,totalRow:true
+            ,limit:30
+            ,limits:[30,60,90]
+            ,cols: [
+                [
+                    {type:'radio',style:'min-width:48px',minWidth:48}
+                    ,{field: 'orderId', title: '订单号',sort: true,totalRowText: '合计'}
+                    ,{field: 'orderDate', title: '订单日期'}
+                    ,{field: 'orderTotal', title: '订单总额',sort: true,totalRow: true}
+                    ,{field: 'transTotal', title: '运费总额',totalRow: true}
+                    ,{field: 'payable', title: '应收款',totalRow: true}
+                    ,{field: 'received', title: '已收款',totalRow: true}
+                    ,{field: 'unpay', title: '未收款',totalRow: true}
+                    ,{field: 'thistime', title: '本次收款',style:'background-color: #F0FFF0;', totalRow: true,edit:'text',align:'center'}
+                ]
+            ]
+        });
+
+        //下拉选择框监听
+        form.on('select(customer-select)', function(data){
+            //console.log(data.value);
+            if(data.value!=="") {
+                if (parseInt(data.value) !== customerId) {
+                    customerId = parseInt(data.value);
+                    tabledata = [];
+                    table.reload('incomp', {
+                        data: tabledata
+                    });
+                }
+            }else{
+                customerId=-1;
+                tabledata = [];
+                table.reload('incomp', {
+                    data: tabledata
+                });
+            }
+        });
+
+        //编辑修改监听
+        table.on('edit(incomp-row)', function (obj) {
+            var reg=/(^[1-9]([0-9]+)?(\.[0-9]{1,2})?$)|(^(0){1}$)|(^[0-9]\.[0-9]([0-9])?$)/;
+            var row=obj.data;
+            var str = obj.tr.selector;
+            var val = obj.value;
+            var start = str.indexOf('=');
+            var index = parseInt(str.substring(start + 2, start + 3));
+            let incomp=table.cache.incomp;
+            if(reg.test(val)) {
+                incomp[index].thistime = parseFloat(val) >= row.unpay ? row.unpay : parseFloat(val);
+            }else{
+                incomp[index].thistime = 0;
+            }
+            table.reload('incomp', {
+                data: incomp
+            });
+        });
+
+        //添加删除按钮监听
+        table.on('toolbar(incomp-row)', function(obj){
+            var checkStatus = table.checkStatus(obj.config.id);
+            // console.log(checkStatus);
+            // console.log(table);
+            switch(obj.event){
+                case 'addOrder':
+                    if(customerId>=0) {
+                        addOrder();
+                    }else{
+                        layer.alert('请先选择客户！');
+                    }
+                    break;
+                case 'delOrder':
+                    if(checkStatus.data.length===0){
+                        layer.alert('请选择要移除的订单');
+                    }else{
+                        layer.confirm('是否移除？', function(index){
+                            removeRow(checkStatus.data[0].orderId);
+                            layer.close(index);
+                        });
+                    }
+                    break;
+            }
+        });
+
+        //添加订单函数
+        function addOrder(){
+            let incomp=table.cache.incomp;
+            if(incomp.length<10) {
+                var ids=[-1];
+                for(var m in incomp){
+                    ids.push(incomp[m].orderId);
+                }
+                localStorage.setItem("receipt_incomp_ids",JSON.stringify(ids));
+                localStorage.setItem("receipt_clientId",customerId);
+                layer.open({
+                    title: '选择订单',
+                    type: 2,
+                    content: '/erp/collectByOrder/selectOrder',
+                    area: ['1000px', '530px'],
+                    btnAlign: 'c'
+                });
+            }else{
+                layer.alert('已达最大订单数！');
+            }
+        }
+
+        //删除行函数
+        function removeRow(id) {
+            let incomp=table.cache.incomp;
+            for(var i=0;i<incomp.length;i++){
+                if(incomp[i].orderId===id){
+                    incomp.splice(i,1);
+                    break;
+                }
+            }
+            table.reload('incomp', {
+                data:incomp
+            });
+        }
+
+        form.on('submit(generate)', function(data){
+            let incomp=table.cache.incomp;
+            let field=data.field;
+            if(incomp.length<=0){
+                layer.alert('请选择收款的订单');
+            }else{
+                $.ajax({
+                    url:"/erp/collectByOrder/recordBill",
+                    type:"POST",
+                    dataType:"json",
+                    data:{
+                        customerId:field.customer,
+                        name:field.name,
+                        list:JSON.stringify(incomp)
+                    },
+                    success:function(result){
+                        layer.alert('收款单记录成功！');
+                        setTimeout(function () {
+                            parent.location.reload();
+                        },1000);
+                    }
+                });
+            }
+            return false;
+        });
+    });
+
+</script>
+
+</body>
+</html>

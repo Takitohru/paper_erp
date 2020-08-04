@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>验货历史</title>
+    <link rel="stylesheet" href="/static/lib/layui/css/layui.css"  media="all"/>
+    <script type="text/javascript" src="/static/lib/layui/layui.js"></script>
+</head>
+<table class="layui-hide" id="checkhistory"  lay-filter="demo"></table>
+<script type="text/html" id="barDemo">
+    <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="detail">查看</a>
+</script>
+<script th:inline="none">
+    layui.use('table', function(){
+        var table = layui.table;
+        table.render({
+            elem: '#checkhistory'
+            ,url:'/j/getCheckHitory'
+            ,parseData:function (res) {
+                return{
+                    "code":0,
+                    "msg":"",
+                    "count":res.total,
+                    "data":res.list
+                }
+            }//为了符合所需json数据规范
+            ,cellMinWidth: 80 //全局定义常规单元格的最小宽度，layui 2.2.1 新增
+            ,cols: [[
+                {field:'inspectionSheetId',title: '验货单ID'}
+                ,{field:'purchaseId',title: '采购单ID'}
+                ,{field:'employeeId',title: '员工ID'}
+                ,{field:'payablePrice',title: '实际价值'}
+                ,{field:'inspectionDate', title: '验货时间', width: '30%', minWidth: 100,templet:'<div>{{ layui.util.toDateString(d.purchaseDate, "yyyy-MM-dd HH:mm:ss") }}</div>'}
+                ,{fixed: 'right', width:178, align:'center', toolbar: '#barDemo'}
+            ]]
+            ,page: true//开启分页
+        });
+    });
+</script>
+<script th:inline="none">
+    layui.use('table', function(){
+        var table = layui.table;
+        //监听工具条
+        table.on('tool(demo)', function(obj){
+            var data = obj.data;
+            if(obj.event === 'detail'){
+                layer.msg('ID：'+ data.purchaseId+ '的查看操作');
+            }
+        });
+        $('.demoTable .layui-btn').on('click', function(){
+            var type = $(this).data('type');
+            active[type] ? active[type].call(this) : '';
+        });
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,57 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org"  class="x-admin-sm">
+<head>
+	<meta charset="UTF-8">
+	<title>ERP系统登录</title>
+	<meta name="renderer" content="webkit|ie-comp|ie-stand">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta http-equiv="Cache-Control" content="no-siteapp" />
+    <link rel="stylesheet" href="/static/css/font.css">
+    <link rel="stylesheet" href="/static/css/login.css">
+	<link rel="stylesheet" href="/static/css/xadmin.css">
+	<script src="/static/lib/layui/layui.js" charset="utf-8"></script>
+	<script type="text/javascript" src="/static/js/xadmin.js"></script>
+    <!--[if lt IE 9]>
+      <script src="https://cdn.staticfile.org/html5shiv/r29/html5.min.js"></script>
+      <script src="https://cdn.staticfile.org/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+
+		<script>
+		alert('账号不存在或密码错误');	
+		</script>
+</head>
+<body class="login-bg">    
+    <div class="login layui-anim layui-anim-up">
+        <div class="message">ERP进销存系统登录</div>
+        <div id="darkbannerwrap"></div>
+        <form method="post" action="/erp/login/loginDeal" onsubmit="return check()" >
+            <input name="id" id="id" placeholder="用户名"  type="text"  class="layui-input" >
+            <hr class="hr15">
+            <input name="password" id="password"  placeholder="密码"  type="password" class="layui-input">
+            <hr class="hr15">
+            <input value="登录"  style="width:100%;" type="submit">
+            <hr class="hr20" >
+        </form>
+    </div>
+
+    
+      <script>
+        function check() {
+            var id = document.getElementById("id").value; //获取输入框input的值
+            var psw = document.getElementById("password").value;
+            if (id == "") {
+                //判断值是否为空
+                layer.msg('用户名不能为空', {icon: 5});
+                return false;
+            } else if (psw == "") {
+            	layer.msg('密码不能为空', {icon: 5});
+                return false;
+            } else {
+                return true;
+            }
+        };
+    </script>
+ 
+</body>
+</html>

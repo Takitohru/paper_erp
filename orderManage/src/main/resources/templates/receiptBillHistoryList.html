@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html class="x-admin-sm">
+<head>
+    <meta charset="UTF-8">
+    <title>欢迎页面-X-admin2.2</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width,user-scalable=yes, minimum-scale=0.4, initial-scale=0.8,target-densitydpi=low-dpi" />
+    <link rel="stylesheet" href="/static/css/font.css">
+    <link rel="stylesheet" href="/static/css/xadmin.css">
+    <script src="/static/lib/layui/layui.js" charset="utf-8"></script>
+    <script type="text/javascript" src="/static/js/xadmin.js"></script>
+    <!--[if lt IE 9]>
+    <script src="https://cdn.staticfile.org/html5shiv/r29/html5.min.js"></script>
+    <script src="https://cdn.staticfile.org/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+</head>
+<body>
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-header">
+                    收款单历史
+                </div>
+                <div class="layui-card-body ">
+                    <table id="receipt-orders" lay-filter="receipt-row"></table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    layui.use('table', function(){
+        var table = layui.table;
+
+        table.render({
+            elem: '#receipt-orders'
+            ,height: 312
+            ,url: '/erp/receipt/receiptHistory/billMasterList'
+            ,page: true
+            ,limit:30
+            ,limits:[30,60,90]
+            ,cols: [
+                [
+                    {field: 'billId', title: '收款单号', sort: true}
+                    ,{field: 'customerName', title: '客户名称'}
+                    ,{field: 'thistime', title: '本单金额', sort: true}
+                    ,{field: 'name', title: '业务员'}
+                    ,{field: 'create', title: '订单日期',sort:true}
+                ]
+            ]
+        });
+
+        //监听行单击事件(table加lay-filter属性)
+        table.on('row(receipt-row)', function(obj){
+            //获取点击行的数据
+            var data = obj.data;
+
+            //控制台打印数据
+            //console.log(data);
+            //本地保存数据
+            localStorage.setItem("receiptHistory_detail_billId",data.billId);
+
+            //新建标签页，打开编辑界面
+            layer.open({
+                title: '选择订单',
+                type: 2,
+                content: '/erp/receipt/receiptHistory/detail/page',
+                area: ['1000px', '530px'],
+                btnAlign: 'c'
+            });
+        });
+
+    });
+
+</script>
+</body>
+</html>

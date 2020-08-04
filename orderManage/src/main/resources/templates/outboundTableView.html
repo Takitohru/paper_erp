@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html class="x-admin-sm">
+<head>
+    <meta charset="UTF-8">
+    <title>欢迎页面-X-admin2.2</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width,user-scalable=yes, minimum-scale=0.4, initial-scale=0.8,target-densitydpi=low-dpi" />
+    <link rel="stylesheet" href="/static/css/font.css">
+    <link rel="stylesheet" href="/static/css/xadmin.css">
+    <script src="/static/lib/layui/layui.js" charset="utf-8"></script>
+    <script type="text/javascript" src="/static/js/xadmin.js"></script>
+    <!--[if lt IE 9]>
+    <script src="https://cdn.staticfile.org/html5shiv/r29/html5.min.js"></script>
+    <script src="https://cdn.staticfile.org/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    <style type="text/css">
+        .info-item{
+            display: inline-block;
+            padding: 5px 10px;
+            height:20px;
+            line-height: 20px;
+            font-size: 16px;
+        }
+        .info-item .info-label{
+            display: inline-block;
+            width:7em;
+            text-align: right;
+        }
+        .info-item .info{
+            display: inline-block;
+            width:10em;
+            border-bottom: 1px solid #009688;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+            	<div class="info-item">
+ 					<a title="打印">
+                    <i class="layui-icon">&#xe601;</i>
+                    </a>  
+                </div>
+                <div class="layui-card-header" style="line-height:60px;height: 60px;">
+                    <h1 class="layui-header" style="text-align:center;line-height:60px;">
+                        出库单
+                    </h1>
+                </div>
+                <div class="layui-card-body ">
+                   <div class="layui-row">
+                       <div class="layui-col-md12">
+                           <div class="info-item">
+                               <div class="info-label">出库单编号：</div>
+                               <div class="info" id="outboundId"></div>
+                           </div>
+                           <div class="info-item">
+                               <div class="info-label">出库日期：</div>
+                               <div class="info" id="time"></div>
+                           </div>
+						   <div class="info-item">
+                               <div class="info-label">客户名称：</div>
+                               <div class="info" id="customer"></div>
+                           </div>
+                           <div class="info-item">
+                               <div class="info-label">经手人：</div>
+                               <div class="info" id="name"></div>
+                           </div>
+
+                       </div>
+                   </div>
+
+                    <table id="outbound-table" lay-filter=""></table>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+
+    let id=localStorage.getItem("id");
+    localStorage.removeItem("id");
+
+    layui.use(['table'], function() {
+        var table = layui.table;
+
+        var outBoundMasterVo={};
+        //var client={};
+        //var employee={};
+        var tabledata=[];
+        var outboundNum=[];
+        
+        $.ajax({
+            url:"/erp/outbound/outboundTableView",
+            type:"GET",
+            dataType:"json",
+            data: {
+                id:id
+            },
+            success:function(result){
+            	var s = JSON.stringify(result);
+                var keyList = eval(s);
+                
+                outBoundMasterVo=keyList[0].outBoundMasterVo;
+                //client=keyList[0].outBoundMasterVo.client;
+                //employee=keyList[0].outBoundMasterVo.employee;
+                for (var i = 0; i < keyList.length; i++) {
+                	//console.log(keyList[i].commodity.commodityName);
+                	tabledata[i]=keyList[i].commodity;
+                	tabledata[i]['outboundNum']=keyList[i].outboundNum;//给对象数组再加一个属性
+
+                }
+                
+                //f12测试
+                //console.log(client);
+                //console.log(employee);
+                //console.log(tabledata[0]);
+                //console.log(tabledata[1]);
+                //console.log(outBoundMasterVo);
+
+                $("#outboundId").html(outBoundMasterVo.outboundId);
+                $("#time").html(outBoundMasterVo.outboundDate);
+                $("#customer").html(outBoundMasterVo.client.clientName);
+                $("#name").html(outBoundMasterVo.employee.employeeName);
+
+                table.reload('outbound-table',{
+                    data:tabledata,outboundNum
+                });
+            }
+        });
+
+        table.render({
+            elem: '#outbound-table'
+            ,url: ''
+            ,data:tabledata,outboundNum
+            ,totalRow:true
+            ,limit:30
+            ,limits:[30,60,90]
+            ,cols: [
+                [
+                    {field: 'commodityId', title: '商品ID',sort: true,totalRowText: '合计'}
+                    ,{field: 'commodityName', title: '商品名称',sort: true}
+                    ,{field: 'brand', title: '品牌',sort: true}
+                    ,{field: 'paperClass', title: '类型',sort: true}
+                    ,{field: 'paperSize', title: '尺寸',sort: true}
+                    ,{field: 'paperWeight', title: '重量',sort: true}
+                    ,{field: 'price', title: '单价',sort: true}
+                    ,{field: 'vipAccount', title: '折扣价格', align:'center',sort: true}
+                    ,{field: 'rank', title: '级别', align:'center',sort: true}
+                    ,{field: 'safeInventory', title: '安全库存', align:'center',sort: true}
+                    ,{field: 'inventoryNumber', title: '库存数量', align:'center',sort: true}
+                    ,{field: 'outboundNum', title: '发货数量', totalRow: true,align:'center',sort: true}
+                ]
+            ]
+        });
+    })
+</script>
+
+</body>
+</html>

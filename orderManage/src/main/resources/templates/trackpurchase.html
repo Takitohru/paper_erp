@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>采购单跟踪</title>
+    <link rel="stylesheet" href="/static/lib/layui/css/layui.css"  media="all"/>
+    <script type="text/javascript" src="/static/lib/layui/layui.js"></script>
+    <script type="text/javascript" src="/static/js/jquery-1.11.3.min.js"></script>
+</head>
+<table class="layui-hide" id="purchase"  lay-filter="demo"></table>
+<script type="text/html" id="barDemo">
+    <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="detail">查看</a>
+    <a class="layui-btn layui-btn-xs" lay-event="edit">入库</a>
+</script>
+<script th:inline="none">
+    layui.use('table', function(){
+        var table = layui.table;
+        table.render({
+            elem: '#purchase'
+            ,url:'/j/getAllPurchase'
+            ,parseData:function (res) {
+                return{
+                    "code":0,
+                    "msg":"",
+                    "count":res.total,
+                    "data":res.list
+                }
+            }//为了符合所需json数据规范
+            ,cellMinWidth: 80 //全局定义常规单元格的最小宽度，layui 2.2.1 新增
+            ,cols: [[
+                {field:'purchaseId',title: '采购单ID'}
+                ,{field:'supplierId',title: '供应商ID'}
+                ,{field:'employeeId',title: '采购员ID'}
+                ,{field:'totalPrice',title: '采购总价'}
+                ,{field:'status',title: '采购单状态'}
+                ,{field:'purchaseDate', title: '下单时间', width: '30%', minWidth: 100,templet:'<div>{{ layui.util.toDateString(d.purchaseDate, "yyyy-MM-dd HH:mm:ss") }}</div>'} //minWidth：局部定义当前单元格的最小宽度，layui 2.2.1 新增
+                ,{fixed: 'right', width:178, align:'center', toolbar: '#barDemo'}
+            ]]
+            ,page: true//开启分页
+        });
+    });
+</script>
+<script th:inline="none">
+    layui.use('table', function(){
+        var table = layui.table;
+        //监听工具条
+        table.on('tool(demo)', function(obj){
+            var data = obj.data;
+            if(obj.event === 'detail'){
+                layer.msg('ID：'+ data.purchaseId+ '的查看操作');
+            } else if(obj.event === 'edit'){
+                location.href="purchasedit?parchaseId="+data.purchaseId;
+            }
+        });
+        $('.demoTable .layui-btn').on('click', function(){
+            var type = $(this).data('type');
+            active[type] ? active[type].call(this) : '';
+        });
+    });
+</script>
+</body>
+</html>
